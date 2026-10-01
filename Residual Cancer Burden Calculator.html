@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RCBxNeo — Post-Neoadjuvant Residual Cancer Burden Calculator</title>
+<meta name="description" content="RCBxNeo: the Symmans residual cancer burden index for breast surgical pathology after neoadjuvant therapy.">
+<link rel="icon" href="assets/rcbxneo-icon.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f4;--panel:#fff;--ink:#17262b;--mute:#5b6b70;--line:#d3dbdc;--accent:#1f6f78;--r0:#2e7d4f;--r1:#8a9a1f;--r2:#c77a14;--r3:#b03a2e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1d;--panel:#16252a;--ink:#e6eeee;--mute:#93a5a8;--line:#2a3d42;--accent:#5bb8c2;--r0:#5fc08a;--r1:#c4d54a;--r2:#f0a444;--r3:#ef7a6c}}
+:root[data-theme="dark"]{--bg:#0f1a1d;--panel:#16252a;--ink:#e6eeee;--mute:#93a5a8;--line:#2a3d42;--accent:#5bb8c2;--r0:#5fc08a;--r1:#c4d54a;--r2:#f0a444;--r3:#ef7a6c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Source Serif 4",Georgia,"Times New Roman",serif}
+main{max-width:720px;margin:0 auto;padding:24px 16px 40px}
+.brand{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.brand img{width:38px;height:38px;object-fit:contain;flex:0 0 auto}
+h1{font-size:1.7rem;line-height:1.2;margin:0}
+.sub{color:var(--mute);margin:0 0 20px;font-size:.95rem}
+fieldset{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin:0 0 16px;padding:14px 16px 8px}
+legend{font-weight:700;padding:0 6px}
+.row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin-bottom:10px}
+.row label{font-size:.95rem}
+.row small{display:block;color:var(--mute);font-size:.8rem}
+input{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.btns{display:flex;gap:10px;margin-bottom:18px}
+button{font:inherit;padding:10px 18px;border-radius:4px;border:1px solid var(--accent);cursor:pointer}
+#calc{background:var(--accent);color:var(--bg);font-weight:700}
+#reset{background:transparent;color:var(--accent)}
+#out{background:var(--panel);border:1px solid var(--line);border-left:8px solid var(--line);border-radius:6px;padding:16px}
+#out h2{margin:0 0 4px;font-size:1.5rem}
+#resp{color:var(--mute);font-size:.9rem;margin-top:6px}
+.err{color:var(--r3);margin:0 0 10px;min-height:1.2em;font-size:.9rem}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0 0}
+dt{color:var(--mute)}dd{margin:0;font-variant-numeric:tabular-nums}
+.scale{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left}
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin:0 0 16px;padding:12px 16px}
+summary{font-weight:700;cursor:pointer}
+.hint{color:var(--mute);font-size:.9rem;margin:10px 0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.tools button{padding:6px 12px;background:transparent;color:var(--ink);border-color:var(--line)}
+.tools button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);font-weight:700}
+.cwrap{margin:10px 0}
+#cv{width:100%;height:auto;display:none;touch-action:none;cursor:crosshair;border:1px solid var(--line)}
+.btns2{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btns2 button{background:transparent;color:var(--accent);padding:8px 12px}
+#send{background:var(--accent);color:var(--bg);font-weight:700}
+.msg{color:var(--mute);font-size:.9rem;min-height:1.3em;margin:8px 0 0}
+.note{color:var(--mute);font-size:.8rem;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+<div class="brand"><img src="assets/rcbxneo-icon.png" alt="" width="38" height="38"><h1>RCBxNeo</h1></div>
+<p class="sub">Post-Neoadjuvant Residual Cancer Burden Calculator. Breast cancer after neoadjuvant therapy &mdash; enter the pathology measurements from the resection specimen.</p>
+
+<details open><summary>Estimate cellularity from an image</summary>
+<p class="hint">Upload a JPG or PNG of the tumor bed. Pick a tool, then click or drag over squares. Unmarked squares count as tumor bed without carcinoma. Use Exclude for glass or tissue outside the tumor bed. The image stays in your browser.</p>
+<input type="file" id="img" accept="image/*" aria-label="Upload image">
+<div class="tools" role="group" aria-label="Marking tool">
+<button type="button" data-t="1" aria-pressed="true">Invasive</button>
+<button type="button" data-t="2" aria-pressed="false">In situ</button>
+<button type="button" data-t="3" aria-pressed="false">Exclude</button>
+<button type="button" data-t="0" aria-pressed="false">Erase</button>
+</div>
+<div class="row"><label for="cols">Grid columns<small>more columns means smaller squares; changing it clears marks</small></label><input id="cols" type="number" min="4" max="60" value="20"></div>
+<div class="cwrap"><canvas id="cv" width="600" height="400" aria-label="Image with grid overlay"></canvas></div>
+<dl id="gst"><dt>Status</dt><dd>Upload an image to begin.</dd></dl>
+<div class="btns2">
+<button type="button" id="addf">Add field to total</button>
+<button type="button" id="clrm">Clear marks</button>
+<button type="button" id="clrp">Reset total</button>
+<button type="button" id="send">Use in calculator</button>
+</div>
+<p class="msg" id="gmsg" role="status"></p>
+<p class="hint">One image reflects only that field. For a whole tumor bed, mark several representative fields and add each to the total; the total pools all squares. Treat the result as an aid and confirm it against your own review of the slide.</p>
+</details>
+
+<fieldset><legend>Primary tumor bed</legend>
+<div class="row"><label for="d1">Largest dimension of tumor bed<small>mm</small></label><input id="d1" type="number" min="0" step="any" inputmode="decimal"></div>
+<div class="row"><label for="d2">Second dimension of tumor bed<small>mm, perpendicular to the first</small></label><input id="d2" type="number" min="0" step="any" inputmode="decimal"></div>
+<div class="row"><label for="cca">Overall cancer cellularity<small>% of tumor bed area containing carcinoma (invasive + in situ)</small></label><input id="cca" type="number" min="0" max="100" step="any" inputmode="decimal"></div>
+<div class="row"><label for="cis">Carcinoma that is in situ<small>% of the cancer in the bed (0 to 100)</small></label><input id="cis" type="number" min="0" max="100" step="any" inputmode="decimal"></div>
+</fieldset>
+
+<fieldset><legend>Lymph nodes</legend>
+<div class="row"><label for="ln">Number of positive nodes<small>nodes containing metastatic carcinoma</small></label><input id="ln" type="number" min="0" step="1" inputmode="numeric"></div>
+<div class="row"><label for="dm">Diameter of largest nodal metastasis<small>mm</small></label><input id="dm" type="number" min="0" step="any" inputmode="decimal"></div>
+</fieldset>
+
+<div class="btns"><button id="calc" type="button">Calculate RCB</button><button id="reset" type="button">Clear</button></div>
+<p class="err" id="err" role="alert"></p>
+
+<section id="out" aria-live="polite">
+<h2 id="cls">RCB class: not calculated</h2>
+<div id="idx">Enter values and select Calculate RCB.</div>
+<div id="resp"></div>
+<dl id="det"></dl>
+<p class="err" id="warn" role="alert"></p>
+</section>
+
+<div class="scale"><table>
+<caption style="text-align:left;color:var(--mute);padding:14px 0 4px">Class cut-points (Symmans WF, Peintinger F, Hatzis C, et al. J Clin Oncol 2007;25(28):4414-4422)</caption>
+<tr><th>Class</th><th>RCB index</th><th>Residual burden</th></tr>
+<tr><td>RCB-0</td><td>0</td><td>No residual invasive breast or nodal disease. Residual in situ disease is permitted.</td></tr>
+<tr><td>RCB-I</td><td>above 0 to 1.36</td><td>Minimal</td></tr>
+<tr><td>RCB-II</td><td>above 1.36 to 3.28</td><td>Moderate</td></tr>
+<tr><td>RCB-III</td><td>above 3.28</td><td>Extensive</td></tr>
+</table></div>
+
+<details><summary>Relationship to pathologic response category</summary>
+<p class="hint">RCB class and pathologic response category are related but not interchangeable. In the original cohort, minimal residual disease (RCB-I, 17% of patients) carried the same prognosis as pathologic complete response, and RCB-I can be reported alongside pCR in a synoptic without contradicting either.</p>
+<dl>
+<dt>RCB-0</dt><dd>No residual invasive disease in breast or nodes. This is not identical to pCR: pCR is defined by AJCC as ypT0/Tis ypN0, and RCB-0 permits residual in situ disease in the breast. Report pCR from the ypTNM stage, not from the RCB class.</dd>
+<dt>RCB-I</dt><dd>Minimal residual burden. Prognostically equivalent to pCR in the original data.</dd>
+<dt>RCB-II</dt><dd>Moderate residual burden. Corresponds loosely to a partial response.</dd>
+<dt>RCB-III</dt><dd>Extensive residual burden. Corresponds loosely to an incomplete or no response, but is defined by tumor burden rather than by the absence of response.</dd>
+</dl>
+<p class="hint">RCB measures the volume of what remains. Pathologic response category (complete, partial, incomplete, no response) measures how much the tumor changed. A case can be RCB-III by burden yet still show a partial response, so the two should be reported from their own data rather than inferred from each other. RCB complements ypTNM and does not replace it.</p>
+</details>
+
+<details><summary>Registry coding (NAACCR EOD / SEER*RSA)</summary>
+<p class="hint">Residual Cancer Burden is a site-specific data item under the <strong>Breast</strong> schema only (NAACCR item 1178, effective for diagnosis year 2026 and later). It has no cross-site equivalent, so this calculator is not validated for rectal, gastrointestinal, gynecologic, or any other tumor site.</p>
+<dl>
+<dt>Coded range</dt><dd>0.000 – 9.999, three decimal places</dd>
+<dt>Rounding</dt><dd>Record to the nearest one thousandth; all three digits beyond the decimal point must be filled in. A report stating 3.151 is coded 3.151; a report stating 3 is coded 3.000.</dd>
+<dt>X.777</dt><dd>No neoadjuvant therapy, or neoadjuvant therapy with no surgical resection. The patient does not meet the criteria for an RCB score.</dd>
+<dt>X.888</dt><dd>Not applicable: information not collected for this case. If required by the standard setter, X.8 results in an edit error.</dd>
+<dt>X.999</dt><dd>Post-neoadjuvant surgery completed but the RCB score is not documented in the CAP protocol or synoptic pathology report, or the surgical pathology report is unavailable.</dd>
+<dt>Blank</dt><dd>Must be blank if the diagnosis year is before 2026.</dd>
+</dl>
+<p class="hint">A score is only derived when neoadjuvant therapy <em>and</em> a surgical resection have both been performed, and only from the values on the CAP protocol or synoptic pathology report.</p>
+</details>
+
+<details><summary>Scope</summary>
+<p class="hint">RCB measures residual disease in the breast and regional lymph nodes after neoadjuvant therapy and resection. It is the most validated measure of residual disease for breast cancer and is prognostic across subtypes, treatments, and stage groups. The same arithmetic applied to another tumor site would produce a number, but no validated cut-points exist for those sites, so the class assigned here would not be interpretable.</p>
+</details>
+
+<p class="note">Formula: RCB = 1.4(f<sub>inv</sub> · d<sub>prim</sub>)<sup>0.17</sup> + [4(1 − 0.75<sup>LN</sup>) · d<sub>met</sub>]<sup>0.17</sup>, where d<sub>prim</sub> = √(d1 × d2), f<sub>inv</sub> = (1 − %in situ/100) × cellularity/100, LN = positive nodes, d<sub>met</sub> = largest nodal metastasis (mm). This is an independent implementation for education and verification. Confirm results against the official MD Anderson calculator before using them in a clinical report.</p>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var ids=["d1","d2","cca","cis","ln","dm"];
+function val(i){var v=$(i).value.trim();return v===""?NaN:parseFloat(v)}
+function setClass(c,color){$("out").style.borderLeftColor=color;$("cls").textContent=c;$("cls").style.color=color}
+function calc(){
+  $("err").textContent="";
+  var v={};ids.forEach(function(i){v[i]=val(i)});
+  var miss=ids.filter(function(i){return isNaN(v[i])});
+  if(miss.length){$("err").textContent="Fill in every field. Use 0 where nothing applies.";return}
+  if(ids.some(function(i){return v[i]<0})){$("err").textContent="Values cannot be negative.";return}
+  if(v.cca>100||v.cis>100){$("err").textContent="Percentages must be between 0 and 100.";return}
+  if(v.ln!==Math.floor(v.ln)){$("err").textContent="Number of positive nodes must be a whole number.";return}
+  var dprim=Math.sqrt(v.d1*v.d2);
+  var finv=(1-v.cis/100)*(v.cca/100);
+  var t1=1.4*Math.pow(finv*dprim,0.17);
+  var t2=Math.pow(4*(1-Math.pow(0.75,v.ln))*v.dm,0.17);
+  var rcb=t1+t2;
+  var cls,col,burd,resp;
+  if(rcb<=0){cls="RCB-0";col="var(--r0)";burd="No residual invasive disease";resp="RCB-0 permits residual in situ disease. Report pCR from the ypTNM stage, not from this class."}
+  else if(rcb<=1.36){cls="RCB-I";col="var(--r1)";burd="Minimal residual burden";resp="Prognostically equivalent to pCR in the original cohort."}
+  else if(rcb<=3.28){cls="RCB-II";col="var(--r2)";burd="Moderate residual burden";resp="Corresponds loosely to a partial response."}
+  else{cls="RCB-III";col="var(--r3)";burd="Extensive residual burden";resp="Corresponds loosely to an incomplete or no response."}
+  setClass("RCB class: "+cls,col);
+  $("idx").textContent="RCB index: "+rcb.toFixed(3)+" ("+burd+")";
+  $("resp").textContent=resp;
+  $("det").innerHTML="<dt>f<sub>inv</sub></dt><dd>"+finv.toFixed(3)+
+    " ("+(finv*100).toFixed(1)+"% of bed)</dd>";
+  var w=[];
+  if(rcb>9.999)w.push("Index is above the NAACCR coded range of 0.000 to 9.999. This value cannot be recorded in the registry data item.");
+  if(rcb<=0&&(v.d1>0||v.d2>0||v.cca>0||v.ln>0||v.dm>0))w.push("Zero index with non-zero measurements. The equation returns exactly zero here; confirm the entries, especially a 0% cellularity or a 0 mm metastasis.");
+  if(rcb>0&&v.cca===0)w.push("Cellularity of 0% with a non-zero index. The breast component cannot contribute; check whether cellularity was left out.");
+  if(rcb>0&&v.dm===0&&v.ln>0)w.push("Positive nodes reported with a 0 mm largest metastasis. The node component cannot contribute; check the metastasis measurement.");
+  $("warn").textContent=w.join(" ");
+}
+$("calc").addEventListener("click",calc);
+ids.forEach(function(i){$(i).addEventListener("keydown",function(e){if(e.key==="Enter")calc()})});
+$("reset").addEventListener("click",function(){
+  ids.forEach(function(i){$(i).value=""});
+  $("err").textContent="";$("det").innerHTML="";$("warn").textContent="";$("resp").textContent="";
+  $("out").style.borderLeftColor="var(--line)";$("cls").style.color="";
+  $("cls").textContent="RCB class: not calculated";$("idx").textContent="Enter values and select Calculate RCB.";
+});
+})();
+(function(){
+var $=function(i){return document.getElementById(i)};
+var cv=$("cv"),ctx=cv.getContext("2d"),img=null,cols=20,cs=0,rows=0,st=[],tool=1,down=false;
+var pool={inv:0,ins:0,cnt:0,fields:0};
+var COL={1:"rgba(200,40,40,.45)",2:"rgba(40,90,220,.45)",3:"rgba(20,20,20,.7)"};
+function stats(){
+  var inv=0,ins=0,exc=0;
+  st.forEach(function(s){if(s===1)inv++;else if(s===2)ins++;else if(s===3)exc++});
+  return {inv:inv,ins:ins,cnt:st.length-exc};
+}
+function pct(a){var t=a.inv+a.ins;return {cell:a.cnt?t/a.cnt*100:0,cis:t?a.ins/t*100:0}}
+function render(){
+  if(!img)return;
+  ctx.drawImage(img,0,0,cv.width,cv.height);
+  var lw=Math.max(1,cv.width/700);
+  for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
+    var s=st[r*cols+c];
+    if(s){ctx.fillStyle=COL[s];ctx.fillRect(c*cs,r*cs,cs,cs)}
+  }
+  ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=lw;
+  ctx.beginPath();
+  for(var i=0;i<=cols;i++){ctx.moveTo(i*cs,0);ctx.lineTo(i*cs,rows*cs)}
+  for(var j=0;j<=rows;j++){ctx.moveTo(0,j*cs);ctx.lineTo(cols*cs,j*cs)}
+  ctx.stroke();
+  info();
+}
+function info(){
+  var a=stats(),p=pct(a);
+  var h="<dt>This image</dt><dd>"+a.inv+" invasive, "+a.ins+" in situ, "+(st.length-a.cnt)+" excluded of "+st.length+" squares</dd>"+
+    "<dt>Cellularity</dt><dd>"+p.cell.toFixed(1)+"%</dd><dt>In situ share</dt><dd>"+p.cis.toFixed(1)+"%</dd>";
+  if(pool.fields){var q=pct(pool);h+="<dt>Total ("+pool.fields+" field"+(pool.fields>1?"s":"")+")</dt><dd>"+q.cell.toFixed(1)+"% cellularity, "+q.cis.toFixed(1)+"% in situ</dd>"}
+  $("gst").innerHTML=h;
+}
+function layout(){
+  if(!img)return;
+  cols=Math.min(60,Math.max(4,parseInt($("cols").value,10)||20));
+  var w=Math.min(img.naturalWidth,1200);
+  cv.width=w;cv.height=Math.round(w*img.naturalHeight/img.naturalWidth);
+  cs=cv.width/cols;rows=Math.floor(cv.height/cs);
+  st=new Array(cols*rows).fill(0);
+  cv.style.display="block";render();
+}
+function paint(e){
+  var b=cv.getBoundingClientRect();
+  var x=(e.clientX-b.left)*cv.width/b.width,y=(e.clientY-b.top)*cv.height/b.height;
+  var c=Math.floor(x/cs),r=Math.floor(y/cs);
+  if(c<0||c>=cols||r<0||r>=rows)return;
+  var k=r*cols+c;
+  if(st[k]!==tool){st[k]=tool;render()}
+}
+cv.addEventListener("pointerdown",function(e){down=true;cv.setPointerCapture(e.pointerId);paint(e)});
+cv.addEventListener("pointermove",function(e){if(down)paint(e)});
+cv.addEventListener("pointerup",function(){down=false});
+cv.addEventListener("pointercancel",function(){down=false});
+$("img").addEventListener("change",function(e){
+  var f=e.target.files[0];if(!f)return;
+  var u=URL.createObjectURL(f),im=new Image();
+  im.onload=function(){img=im;layout();URL.revokeObjectURL(u);$("gmsg").textContent=""};
+  im.onerror=function(){$("gmsg").textContent="That file could not be read as an image. Use JPG or PNG."};
+  im.src=u;
+});
+$("cols").addEventListener("change",layout);
+Array.prototype.forEach.call(document.querySelectorAll(".tools button"),function(b){
+  b.addEventListener("click",function(){
+    tool=parseInt(b.getAttribute("data-t"),10);
+    Array.prototype.forEach.call(document.querySelectorAll(".tools button"),function(o){o.setAttribute("aria-pressed",o===b?"true":"false")});
+  });
+});
+$("clrm").addEventListener("click",function(){st=st.map(function(){return 0});render()});
+$("addf").addEventListener("click",function(){
+  if(!img){$("gmsg").textContent="Upload an image first.";return}
+  var a=stats();
+  if(!a.cnt){$("gmsg").textContent="Every square is excluded, so there is nothing to add.";return}
+  pool.inv+=a.inv;pool.ins+=a.ins;pool.cnt+=a.cnt;pool.fields++;
+  $("gmsg").textContent="Field "+pool.fields+" added. Load the next image or send the total to the calculator.";
+  info();
+});
+$("clrp").addEventListener("click",function(){pool={inv:0,ins:0,cnt:0,fields:0};$("gmsg").textContent="Total cleared.";info()});
+$("send").addEventListener("click",function(){
+  var a=pool.fields?pool:stats(),src=pool.fields?"the total of "+pool.fields+" field(s)":"this image";
+  if(!a.cnt){$("gmsg").textContent="Nothing to send. Upload an image and mark squares first.";return}
+  var p=pct(a);
+  $("cca").value=p.cell.toFixed(1);$("cis").value=p.cis.toFixed(1);
+  $("gmsg").textContent="Filled cellularity "+p.cell.toFixed(1)+"% and in situ "+p.cis.toFixed(1)+"% from "+src+". Enter the other values below.";
+});
+})();
+</script>
+</body>
+</html>
